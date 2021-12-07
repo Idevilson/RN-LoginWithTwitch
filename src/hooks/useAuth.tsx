@@ -1,7 +1,6 @@
 import { makeRedirectUri, revokeAsync, startAsync } from 'expo-auth-session';
 import React, { useEffect, createContext, useContext, useState, ReactNode } from 'react';
 import { generateRandom } from 'expo-auth-session/build/PKCE';
-
 import { api } from '../services/api';
 
 interface User {
@@ -37,21 +36,29 @@ function AuthProvider({ children }: AuthProviderData) {
   const [userToken, setUserToken] = useState('');
 
   // get CLIENT_ID from environment variables
+  const { CLIENT_ID } = process.env;
 
   async function signIn() {
     try {
-      // set isLoggingIn to true
+      console.log(CLIENT_ID);
+      setIsLoggingIn(true);
 
-      // REDIRECT_URI - create OAuth redirect URI using makeRedirectUri() with "useProxy" option set to true
-      // RESPONSE_TYPE - set to "token"
-      // SCOPE - create a space-separated list of the following scopes: "openid", "user:read:email" and "user:read:follows"
-      // FORCE_VERIFY - set to true
-      // STATE - generate random 30-length string using generateRandom() with "size" set to 30
+      const REDIRECT_URI = makeRedirectUri({ useProxy: true });
+      const RESPONSE_TYPE = "token";
+      const SCOPE = encodeURI('openid user:read:email user:read:follows');
+      const FORCE_VERIFY = true;
+      const STATE = generateRandom(30);
 
-      // assemble authUrl with twitchEndpoint authorization, client_id, 
-      // redirect_uri, response_type, scope, force_verify and state
+      const authUrl = twitchEndpoints.authorization + 
+      `?client_id=${CLIENT_ID}` + 
+      `&redirect_uri=${REDIRECT_URI}` + 
+      `&response_type=${RESPONSE_TYPE}` +
+      `&scope${SCOPE}` + 
+      `&force_verify=${FORCE_VERIFY}` + 
+      `&state=${STATE}`;
 
-      // call startAsync with authUrl
+      const result = await startAsync({authUrl});
+      console.log(result);
 
       // verify if startAsync response.type equals "success" and response.params.error differs from "access_denied"
       // if true, do the following:
@@ -69,7 +76,7 @@ function AuthProvider({ children }: AuthProviderData) {
     } catch (error) {
       // throw an error
     } finally {
-      // set isLoggingIn to false
+      setIsLoggingIn(false);
     }
   }
 
@@ -90,8 +97,8 @@ function AuthProvider({ children }: AuthProviderData) {
   }
 
   useEffect(() => {
-    // add client_id to request's "Client-Id" header
-  }, [])
+   api.defaults.headers['Client-Id'] = CLIENT_ID;
+  }, []);
 
   return (
     <AuthContext.Provider value={{ user, isLoggingOut, isLoggingIn, signIn, signOut }}>
