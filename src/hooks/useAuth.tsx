@@ -40,7 +40,6 @@ function AuthProvider({ children }: AuthProviderData) {
 
   async function signIn() {
     try {
-      console.log(CLIENT_ID);
       setIsLoggingIn(true);
 
       const REDIRECT_URI = makeRedirectUri({ useProxy: true });
@@ -57,24 +56,21 @@ function AuthProvider({ children }: AuthProviderData) {
       `&force_verify=${FORCE_VERIFY}` + 
       `&state=${STATE}`;
 
-      const result = await startAsync({authUrl});
-      console.log(result);
+      const startAsyncResponse = await startAsync({authUrl});
+      
+      if(startAsyncResponse.type === "success" && startAsyncResponse.params.error !== "äccess_denied"){
+        if(startAsyncResponse.params.state !== STATE){
+          throw new Error("Invalid state value");
+        } 
+        setUserToken(startAsyncResponse.params.access_token);
+        api.defaults.headers.authorization = `Bearer ${startAsyncResponse.params.access_token}`;
+      }
+      
+      const userResponse = await api.get('/users');
+      setUser(userResponse.data.data[0]);
 
-      // verify if startAsync response.type equals "success" and response.params.error differs from "access_denied"
-      // if true, do the following:
-
-        // verify if startAsync response.params.state differs from STATE
-        // if true, do the following:
-          // throw an error with message "Invalid state value"
-
-        // add access_token to request's authorization header
-
-        // call Twitch API's users route
-
-        // set user state with response from Twitch API's route "/users"
-        // set userToken state with response's access_token from startAsync
     } catch (error) {
-      // throw an error
+      throw new Error();
     } finally {
       setIsLoggingIn(false);
     }
@@ -82,17 +78,17 @@ function AuthProvider({ children }: AuthProviderData) {
 
   async function signOut() {
     try {
-      // set isLoggingOut to true
+      setIsLoggingOut(true);
+      revokeAsync({token: userToken, clientId: CLIENT_ID}, {revocationEndpoint: twitchEndpoints.revocation});
 
-      // call revokeAsync with access_token, client_id and twitchEndpoint revocation
     } catch (error) {
     } finally {
-      // set user state to an empty User object
-      // set userToken state to an empty string
+      setUser({} as User);
+      setUserToken("");
 
-      // remove "access_token" from request's authorization header
-
-      // set isLoggingOut to false
+      delete api.defaults.headers.authorization;
+      
+      setIsLoggingOut(false);
     }
   }
 
@@ -114,3 +110,12 @@ function useAuth() {
 }
 
 export { AuthProvider, useAuth };
+
+
+//29 dia 
+
+//oficio numero 23
+
+//sendo cobrado por orgaos superiores
+
+//Para saber dele em que orgao ele foi ouvidos se foi federal ou estadual 

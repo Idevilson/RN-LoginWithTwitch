@@ -30,8 +30,8 @@ export function SignIn() {
       signIn();
     } catch (error) {
       Alert.alert(
-        "Aviso",
-        "Erro ao realizar o login"
+        "Erro SignIn",
+        "Ocorreu um erro ao tentar logar no app"
       );
     }
   }
